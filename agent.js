@@ -25,8 +25,8 @@ const checkOutOfBounds = (searchLocation, mazeSize) => {
 };
 
 // make sure agent hasn't doubled back on itself
-const checkBacktrack = (searchLocation, path) => {
-  return path.some(
+const checkBacktrack = (searchLocation, searchTree) => {
+  return searchTree.some(
     (p) =>
       p.coordinates.x === searchLocation.x &&
       p.coordinates.y === searchLocation.y
@@ -88,11 +88,6 @@ const probeCoordinates = (
       depth: _.get(path[path.length - 1], "depth", 0) + 1,
     };
   });
-
-  // console.log(
-  //   `search space: ${JSON.stringify(searchSpace.map((s) => s.coordinates))}`
-  // );
-  // console.log(`depth: ${JSON.stringify(searchSpace.map((s) => s.depth))}`);
 
   return searchSpace.filter(
     (node) =>

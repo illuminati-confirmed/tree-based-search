@@ -40,7 +40,7 @@ const dfs = (problem, goal, initialSearchCoordinate) => {
     const path = [...searchLocation.previousCoordinates, searchLocation];
 
     if (searchLocation.isGoal) {
-      return { status: "found", path, searchTree };
+      return { status: "found", path: _.tail(path), searchTree };
     }
     const candidates = probeCoordinates(
       searchLocation.coordinates,
@@ -76,7 +76,7 @@ const bfs = (problem, goal, initialSearchCoordinate) => {
     const path = [...searchLocation.previousCoordinates, searchLocation];
 
     if (searchLocation.isGoal) {
-      return { status: "found", path, searchTree };
+      return { status: "found", path: _.tail(path), searchTree };
     }
     const candidates = probeCoordinates(
       searchLocation.coordinates,
@@ -113,7 +113,7 @@ const gbfs = (problem, goal, initialSearchCoordinate) => {
     const path = [...searchLocation.previousCoordinates, searchLocation];
 
     if (searchLocation.isGoal) {
-      return { status: "found", path, searchTree };
+      return { status: "found", path: _.tail(path), searchTree };
     }
     const candidates = probeCoordinates(
       searchLocation.coordinates,
@@ -154,7 +154,7 @@ const aStar = (problem, goal, initialSearchCoordinate) => {
     const path = [...searchLocation.previousCoordinates, searchLocation];
 
     if (searchLocation.isGoal) {
-      return { status: "found", path, searchTree };
+      return { status: "found", path: _.tail(path), searchTree };
     }
     const candidates = probeCoordinates(
       searchLocation.coordinates,
@@ -195,7 +195,7 @@ const customOne = (problem, goal, initialSearchCoordinate) => {
     const path = [...searchLocation.previousCoordinates, searchLocation];
 
     if (searchLocation.isGoal) {
-      return { status: "found", path, searchTree };
+      return { status: "found", path: _.tail(path), searchTree };
     }
     const candidates = probeCoordinates(
       searchLocation.coordinates,
@@ -291,7 +291,7 @@ const customTwo = (problem, goal, initialSearchCoordinate) => {
 
       return {
         status: "found",
-        path: finalPath,
+        path: _.tail(finalPath),
         searchTree: searchTree.concat(reverseSearchTree),
       };
     }
@@ -344,14 +344,56 @@ const customTwo = (problem, goal, initialSearchCoordinate) => {
  *
  * From a given problem and algorithm, find a path through the maze to the goal
  */
-const searchMaze = (problem, searchMethod) => {
-  const { agentLocation, goals } = problem;
-  const goal = goals[0];
-  const initialSearchCoordinate = getInitialNode(agentLocation, goal);
+const searchMaze = (problem, searchMethod, allGoals) => {
+  return allGoals
+    ? searchAllGoals(problem, searchMethod)
+    : findSolution(
+        problem,
+        problem.agentLocation,
+        problem.goals[0],
+        searchMethod
+      );
+};
 
+const findSolution = (problem, startNode, goal, searchMethod) => {
+  const initialSearchCoordinate = getInitialNode(startNode, goal);
   const algorithm = selectAlgorithm(searchMethod);
+
   const solution = algorithm(problem, goal, initialSearchCoordinate);
   return solution;
+};
+
+const searchAllGoals = (problem, searchMethod) => {
+  const { agentLocation, goals } = problem;
+  let goalList = _.cloneDeep(goals);
+  let startNode = agentLocation;
+  let solutionPath = [];
+  while (goalList.length > 0) {
+    const solutions = goalList
+      .map((goal) => {
+        return {
+          goal: goal,
+          solution: findSolution(problem, startNode, goal, searchMethod),
+        };
+      })
+      .sort((a, b) => b.solution.path.length - a.solution.path.length);
+    const solution = solutions.pop();
+    solutionPath.push(solution.solution);
+    goalList = goalList.filter((goal) => goal !== solution.goal);
+    startNode = solution.goal;
+  }
+
+  const finalSolution = solutionPath.reduce(
+    (combinedSolution, solution) => {
+      combinedSolution.status = "found";
+      combinedSolution.searchTree.push(...solution.searchTree);
+      combinedSolution.path.push(...solution.path);
+      return combinedSolution;
+    },
+    { status: "fail", path: [], searchTree: [] }
+  );
+
+  return finalSolution;
 };
 
 // map search functions on export

@@ -49,17 +49,18 @@ const mapFileData = (fileData) => {
 const args = process.argv.slice(2);
 const fileName = args[0];
 const searchMethod = args[1];
+const allGoals = args[2] === "allGoals" ? true : false;
 const fileData = fs.readFileSync(fileName, "utf-8", (err, data) => {
   if (err) return;
   return data;
 });
 const problem = mapFileData(fileData);
-const solution = searchMaze(problem, searchMethod);
+const solution = searchMaze(problem, searchMethod, allGoals);
 console.log(`${fileName} ${searchMethod} ${solution.searchTree.length}`);
 
 // output the path if found, else output no solution found
 if (solution.status === "found") {
-  const directionString = _.tail(solution.path).reduce(
+  const directionString = solution.path.reduce(
     (str, node) => (str = str + node.direction),
     ""
   );
